@@ -3,147 +3,424 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admissibility Physics Engine v3.5 — Status Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<title>Admissibility Physics — Live Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0a0e1a; font-family: 'JetBrains Mono', 'Fira Code', monospace; color: #e2e8f0; }
-  .tab-btn { padding: 8px 20px; border: none; cursor: pointer; font-size: 13px; background: transparent; color: #94a3b8; border-bottom: 2px solid transparent; font-family: inherit; }
-  .tab-btn.active { background: #1e293b; color: #f8fafc; font-weight: 700; border-bottom-color: #3b82f6; }
-  .tab-btn:hover { color: #e2e8f0; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
-  .card { background: #0f172a; border-radius: 8px; padding: 16px; }
-  .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-  .card-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
-  .card-value { font-size: 28px; font-weight: 800; font-family: monospace; }
-  .card-sub { font-size: 11px; color: #94a3b8; }
-  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-  .bar-track { flex: 1; height: 6px; background: #1e293b; border-radius: 3px; }
-  .bar-fill { height: 100%; border-radius: 3px; }
-  .bar-count { font-size: 13px; font-weight: 700; font-family: monospace; min-width: 24px; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { color: #64748b; font-weight: 600; padding: 6px 8px; text-align: left; border-bottom: 1px solid #334155; }
-  td { padding: 8px; border-bottom: 1px solid #1e293b; }
-  .theorem-card { background: #0f172a; border-radius: 6px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; }
-  .tier-filter { padding: 4px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; font-family: inherit; border: 1px solid #334155; background: #0f172a; color: #94a3b8; }
-  .tier-filter.active { color: #fff; }
-  .audit-row { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #1e293b; border-radius: 6px; margin-bottom: 6px; flex-wrap: wrap; }
-  @media (max-width: 700px) { .card-grid { grid-template-columns: 1fr 1fr; } }
+:root {
+  --bg: #0c0e13; --bg2: #141720; --bg3: #1a1e2a;
+  --border: #2a2f3e; --text: #c8cdd8; --text2: #8a90a0;
+  --accent: #5b9cf5; --green: #4ade80; --yellow: #fbbf24;
+  --red: #f87171; --orange: #fb923c; --purple: #a78bfa; --cyan: #22d3ee;
+  --ep-P: #4ade80; --ep-Ps: #fbbf24; --ep-Cs: #fb923c; --ep-C: #8a90a0;
+  --gap-closed: #4ade80; --gap-import: #5b9cf5; --gap-open: #f87171; --gap-regime: #fb923c;
+  --ps-open: #f87171; --ps-qft: #a78bfa; --ps-regime: #fb923c;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Source Serif 4',Georgia,serif;line-height:1.5;min-height:100vh}
+code,.mono{font-family:'JetBrains Mono',monospace}
+.header{background:linear-gradient(135deg,#0f1218,#151a26,#0f1218);border-bottom:1px solid var(--border);padding:2rem 2rem 1.5rem}
+.header h1{font-size:1.6rem;font-weight:700;letter-spacing:-0.02em;color:#fff}
+.header .subtitle{color:var(--text2);font-size:0.9rem;margin-top:0.25rem}
+.hero-row{display:flex;gap:1rem;margin-top:1.25rem;flex-wrap:wrap}
+.hero-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.9rem 1.2rem;min-width:130px;flex:1}
+.hero-card .label{font-size:0.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;font-family:'JetBrains Mono',monospace}
+.hero-card .value{font-size:1.5rem;font-weight:700;color:#fff;margin-top:0.15rem}
+.hero-card .value.green{color:var(--green)}.hero-card .value.accent{color:var(--accent)}
+.hero-card .value.yellow{color:var(--yellow)}.hero-card .value.red{color:var(--red)}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--bg2);overflow-x:auto}
+.tab{padding:0.7rem 1.3rem;cursor:pointer;font-size:0.82rem;font-family:'JetBrains Mono',monospace;color:var(--text2);border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s}
+.tab:hover{color:var(--text);background:var(--bg3)}.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.content{padding:1.5rem 2rem 3rem;max-width:1200px}.panel{display:none}.panel.active{display:block}
+.section-title{font-size:1.1rem;font-weight:700;color:#fff;margin:1.5rem 0 0.75rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)}
+.section-title:first-child{margin-top:0}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.75rem}
+.ep-bar-container{margin:1rem 0 0.5rem}
+.ep-bar{display:flex;height:28px;border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.ep-bar .segment{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:0.72rem;font-weight:600;color:#000;transition:width 0.5s}
+.ep-legend{display:flex;gap:1.2rem;margin-top:0.5rem;flex-wrap:wrap}
+.ep-legend-item{display:flex;align-items:center;gap:0.35rem;font-size:0.78rem;font-family:'JetBrains Mono',monospace;color:var(--text2)}
+.ep-legend-item .dot{width:10px;height:10px;border-radius:2px}
+table{width:100%;border-collapse:collapse;font-size:0.85rem;margin:0.5rem 0}
+th{text-align:left;padding:0.55rem 0.7rem;font-family:'JetBrains Mono',monospace;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text2);border-bottom:1px solid var(--border)}
+td{padding:0.5rem 0.7rem;border-bottom:1px solid #1e2230}
+tr:hover td{background:var(--bg3)}
+.tag{display:inline-block;padding:0.15rem 0.45rem;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:600}
+.tag-P{background:rgba(74,222,128,0.15);color:var(--ep-P)}
+.tag-Ps{background:rgba(251,191,36,0.15);color:var(--ep-Ps)}
+.tag-Cs{background:rgba(251,146,60,0.15);color:var(--ep-Cs)}
+.tag-C{background:rgba(138,144,160,0.15);color:var(--ep-C)}
+.tag-closed{background:rgba(74,222,128,0.12);color:var(--gap-closed)}
+.tag-import{background:rgba(91,156,245,0.12);color:var(--gap-import)}
+.tag-open{background:rgba(248,113,113,0.12);color:var(--gap-open)}
+.tag-regime{background:rgba(251,146,60,0.12);color:var(--gap-regime)}
+.thm-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:0.75rem 0.9rem;border-left:3px solid var(--border)}
+.thm-card.ep-P{border-left-color:var(--ep-P)}.thm-card.ep-Ps{border-left-color:var(--ep-Ps)}
+.thm-card.ep-Cs{border-left-color:var(--ep-Cs)}.thm-card.ep-C{border-left-color:var(--ep-C)}
+.thm-card .tid{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:0.85rem;color:#fff}
+.thm-card .kr{font-size:0.8rem;color:var(--text2);margin-top:0.25rem}
+.thm-card .meta{margin-top:0.4rem;display:flex;gap:0.4rem;flex-wrap:wrap}
+.tier-grid{margin:1rem 0}
+.tier-row{display:grid;grid-template-columns:180px 1fr;gap:0.75rem;margin-bottom:0.6rem;align-items:start}
+.tier-label{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text2);padding-top:0.3rem}
+.tier-thms{display:flex;flex-wrap:wrap;gap:0.35rem}
+.tier-chip{padding:0.25rem 0.55rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.72rem;font-weight:600;cursor:default;border:1px solid transparent}
+.tier-chip.ep-P{background:rgba(74,222,128,0.12);color:var(--ep-P);border-color:rgba(74,222,128,0.25)}
+.tier-chip.ep-Ps{background:rgba(251,191,36,0.1);color:var(--ep-Ps);border-color:rgba(251,191,36,0.25)}
+.tier-chip.ep-Cs{background:rgba(251,146,60,0.1);color:var(--ep-Cs);border-color:rgba(251,146,60,0.25)}
+.tier-chip.ep-C{background:rgba(138,144,160,0.1);color:var(--ep-C);border-color:rgba(138,144,160,0.25)}
+.tier-chip.clickable{cursor:pointer}.tier-chip.clickable:hover{opacity:0.8}
+svg text{font-family:'JetBrains Mono',monospace}
+.import-item{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:0.7rem 0.9rem;margin-bottom:0.5rem}
+.import-item .name{font-weight:700;color:var(--accent);font-size:0.9rem}
+.import-item .detail{color:var(--text2);font-size:0.82rem;margin-top:0.2rem}
+.import-item .used-by{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--green);margin-top:0.3rem}
+.ps-reason-bar{display:flex;gap:0.5rem;margin:0.75rem 0;flex-wrap:wrap}
+.ps-reason-chip{padding:0.4rem 0.8rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:600}
+.loading{text-align:center;padding:3rem;color:var(--text2);font-size:1.1rem}
+.loading .spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:0.5rem;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-msg{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:1.5rem;color:var(--red);text-align:center;margin:2rem}
+@media(max-width:700px){.content{padding:1rem}.hero-row{flex-direction:column}.tier-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div id="app" style="max-width:920px;margin:0 auto;padding:20px">
-  <div style="margin-bottom:20px">
-    <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:2px">Admissibility Physics Engine</div>
-    <div style="font-size:24px;font-weight:800;color:#f8fafc;letter-spacing:-0.5px">v3.5 Status Dashboard</div>
-    <div style="font-size:12px;color:#64748b">2026-02-07 · 48 theorems · 5 axioms · 0 free parameters · 0 contradictions</div>
-  </div>
-  <div id="tab-bar" style="border-bottom:1px solid #1e293b;margin-bottom:16px;display:flex"></div>
-  <div id="tab-content"></div>
+<div class="header">
+  <h1 id="title">Admissibility Physics Engine — Loading...</h1>
+  <div class="subtitle" id="subtitle">Fetching dashboard data...</div>
+  <div class="hero-row" id="heroRow"></div>
+</div>
+<div class="tabs" id="tabBar"></div>
+<div class="content" id="content">
+  <div class="loading" id="loadingMsg"><span class="spinner"></span> Loading dashboard data...</div>
 </div>
 <script>
-var THEOREMS=[{id:"T1",name:"Contextuality (KS)",tier:0,epi:"P_structural",gap:"import"},{id:"T2",name:"Hilbert Space (GNS)",tier:0,epi:"P_structural",gap:"import"},{id:"T3",name:"Gauge Bundle (DR)",tier:0,epi:"P_structural",gap:"import"},{id:"L_\u03B5*",name:"Granularity Bound",tier:0,epi:"P_structural",gap:"closed"},{id:"T_\u03B5",name:"Min Enforcement Cost",tier:0,epi:"P_structural",gap:"closed"},{id:"T_\u03B7",name:"Subordination Bound",tier:0,epi:"P_structural",gap:"closed"},{id:"T_\u03BA",name:"Capacity Multiplier \u03BA=2",tier:0,epi:"P_structural",gap:"closed"},{id:"T_M",name:"Monogamy (biconditional)",tier:0,epi:"P_structural",gap:"closed"},{id:"T4",name:"Anomaly Cancellation",tier:1,epi:"P_structural",gap:"import"},{id:"T5",name:"Hypercharge Uniqueness",tier:1,epi:"P",gap:"closed"},{id:"T_gauge",name:"SU(3)\u00D7SU(2)\u00D7U(1)",tier:1,epi:"P",gap:"closed"},{id:"T_field",name:"Field Content Template",tier:2,epi:"C",gap:"closed"},{id:"T_ch",name:"EW Channels = 4",tier:2,epi:"P",gap:"closed"},{id:"T7",name:"N_gen = 3",tier:2,epi:"P",gap:"closed"},{id:"T4E",name:"Generation Structure",tier:2,epi:"P_structural",gap:"closed"},{id:"T4F",name:"Capacity Saturation",tier:2,epi:"P_structural",gap:"closed"},{id:"T4G",name:"Yukawa Structure",tier:2,epi:"P_structural",gap:"open"},{id:"T4G_Q31",name:"Neutrino Mass Bound",tier:2,epi:"P_structural",gap:"open"},{id:"T_Higgs",name:"Massive Scalar Required",tier:2,epi:"P_structural",gap:"closed"},{id:"T9",name:"Record Sectors (3!=6)",tier:2,epi:"P_structural",gap:"closed"},{id:"T6",name:"1-Loop \u03B2-coefficients",tier:3,epi:"P_structural",gap:"import"},{id:"T6B",name:"RG Running",tier:3,epi:"P_structural",gap:"import"},{id:"T19",name:"Routing Sectors M=3",tier:3,epi:"P_structural",gap:"closed"},{id:"T20",name:"Loop Suppression",tier:3,epi:"P_structural",gap:"closed"},{id:"T21",name:"\u03B2-function Form",tier:3,epi:"P_structural",gap:"closed"},{id:"T22",name:"Competition Matrix",tier:3,epi:"P_structural",gap:"closed"},{id:"T23",name:"Fixed-Point Formula",tier:3,epi:"P_structural",gap:"import"},{id:"T24",name:"sin\u00B2\u03B8_W = 3/13",tier:3,epi:"P_structural",gap:"closed"},{id:"T25a",name:"Overlap Bounds",tier:3,epi:"P_structural",gap:"closed"},{id:"T25b",name:"Saturation Push x\u21921/2",tier:3,epi:"P_structural",gap:"closed"},{id:"T26",name:"Gamma Ratio Bounds",tier:3,epi:"P_structural",gap:"closed"},{id:"T27c",name:"x=1/2 gauge redundancy",tier:3,epi:"P_structural",gap:"closed"},{id:"T27d",name:"\u03B3\u2082/\u03B3\u2081 = 17/4",tier:3,epi:"P_structural",gap:"closed"},{id:"T_s2\u03B8",name:"Weinberg Angle (final)",tier:3,epi:"P_structural",gap:"closed"},{id:"T7B",name:"Gravity from Non-Factorization",tier:4,epi:"P_structural",gap:"closed"},{id:"T8",name:"d = 4 Spacetime Dimensions",tier:4,epi:"P_structural",gap:"closed"},{id:"T9_grav",name:"Einstein Equations",tier:4,epi:"C_structural",gap:"import"},{id:"T10",name:"Gravitational Coupling",tier:4,epi:"P_structural",gap:"open"},{id:"T11",name:"Cosmological Constant",tier:4,epi:"P_structural",gap:"open"},{id:"T_part",name:"Mass Gap & SSB",tier:4,epi:"P_structural",gap:"closed"},{id:"T12",name:"Dark Matter = Capacity",tier:4,epi:"P_structural",gap:"closed"},{id:"T12E",name:"Baryon Fraction f_b",tier:4,epi:"P_structural",gap:"closed"},{id:"G_ord",name:"Ledger Ordering R1-R4",tier:5,epi:"P_structural",gap:"closed"},{id:"G_fbc",name:"Fluctuation Bound",tier:5,epi:"P_structural",gap:"closed"},{id:"G_cont",name:"Continuum Limit",tier:5,epi:"P_structural",gap:"closed"},{id:"G_sig",name:"Lorentzian Signature",tier:5,epi:"C_structural",gap:"import"},{id:"G_part",name:"Particle Emergence",tier:5,epi:"P_structural",gap:"closed"},{id:"G_close",name:"Full Closure 10/10",tier:5,epi:"P_structural",gap:"closed"}];
-var PREDICTIONS=[{name:"sin\u00B2\u03B8_W",pred:"3/13 = 0.23077",obs:"0.23122",err:0.19,type:"continuous"},{name:"Gauge Group",pred:"SU(3)\u00D7SU(2)\u00D7U(1)",obs:"SU(3)\u00D7SU(2)\u00D7U(1)",err:0,type:"exact"},{name:"Generations",pred:"3",obs:"3",err:0,type:"exact"},{name:"Spacetime d",pred:"4",obs:"4",err:0,type:"exact"},{name:"DM exists",pred:"required",obs:"\u03A9_DM = 0.261",err:0,type:"exact"},{name:"\u03A9_DM/\u03A9_b",pred:"[3.2, 14.0]",obs:"5.33",err:0,type:"range"},{name:"m_H/m_Planck",pred:"1.03\u00D710\u207B\u00B9\u2077",obs:"1.026\u00D710\u207B\u00B9\u2077",err:0.4,type:"continuous"},{name:"f_b",pred:"0.200",obs:"0.157",err:27,type:"continuous"}];
-var AUDIT_CHECKS=[{id:"A01",name:"Runtime Output",st:"FIXED",desc:"Engine produces stdout on every run (v3.4 was silent)",sev:"critical"},{id:"A02",name:"Schema Validation",st:"FIXED",desc:"Every theorem checked for required fields + valid types",sev:"critical"},{id:"A03",name:"DAG Cycle Detection",st:"FIXED",desc:"Dependency graph checked for circular references",sev:"critical"},{id:"A04",name:"Epistemic Labels",st:"FIXED",desc:"Import-gated results labeled C_structural (was P_structural)",sev:"high"},{id:"A05",name:"Hidden Unicode",st:"FIXED",desc:"No bidi/zero-width chars. ASCII headers throughout",sev:"high"},{id:"A06",name:"R11 Regime Gate",st:"FIXED",desc:"T11 (\u039B) explicitly depends on R11 capacity regime",sev:"medium"},{id:"A07",name:"Computational Witnesses",st:"ACTIVE",desc:"V(\u03A6) computed: 5/5 checks including mass gap = 0.53",sev:"high"},{id:"A08",name:"Anomaly Scan",st:"ACTIVE",desc:"Exhaustive z\u00B2-2z-(N\u00B2-1)=0 scan for all N_c",sev:"high"},{id:"A09",name:"Exit Code",st:"ACTIVE",desc:"sys.exit(0 if all_pass else 1) for CI integration",sev:"medium"},{id:"A10",name:"JSON Export",st:"ACTIVE",desc:"Machine-readable output with gap classifications",sev:"medium"},{id:"A11",name:"Standalone Modules",st:"ACTIVE",desc:"Each .py file runs independently with __main__",sev:"medium"},{id:"A12",name:"T26\u2192T27d Decoupled",st:"FIXED",desc:"T26 bounds independent of T27d \u2014 circular dependency broken",sev:"high"}];
-var TIER_NAMES={0:"Axiom Foundations",1:"Gauge Group",2:"Particles",3:"RG / Constants",4:"Gravity + Dark",5:"\u0393_geo Closure"};
-var TIER_COLORS={0:"#6366f1",1:"#8b5cf6",2:"#ec4899",3:"#f59e0b",4:"#10b981",5:"#06b6d4"};
-var GAP_COLORS={closed:"#22c55e","import":"#3b82f6",open:"#ef4444",reduced:"#f59e0b"};
-var EPI_COLORS={P:"#22c55e",P_structural:"#3b82f6",C_structural:"#f97316",C:"#6b7280"};
-var SEV_COLORS={critical:"#ef4444",high:"#f97316",medium:"#eab308"};
-var ST_COLORS={FIXED:"#22c55e",ACTIVE:"#3b82f6"};
+const JSON_URL='dashboard_data.json';
+let DATA=null;
 
-function badge(t,c){return '<span class="badge" style="background:'+c+'22;color:'+c+';border:1px solid '+c+'44">'+t+'</span>';}
-function countBy(a,k){var c={};a.forEach(function(x){c[x[k]]=(c[x[k]]||0)+1;});return c;}
-
-function renderStatus(){
-  var ec=countBy(THEOREMS,'epi'),gc=countBy(THEOREMS,'gap');
-  var h='<div class="card-grid">';
-  [{l:"Theorems",v:"48/48",s:"all pass",c:"#22c55e"},{l:"Free Params",v:"0",s:"zero",c:"#3b82f6"},{l:"Contradictions",v:"0",s:"with data",c:"#22c55e"},{l:"Open Physics",v:"4",s:"genuine problems",c:"#f59e0b"}].forEach(function(s){
-    h+='<div class="card" style="border:1px solid '+s.c+'33"><div class="card-label">'+s.l+'</div><div class="card-value" style="color:'+s.c+'">'+s.v+'</div><div class="card-sub">'+s.s+'</div></div>';
-  });
-  h+='</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div class="card"><div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:12px">Epistemic Distribution</div>';
-  Object.keys(ec).forEach(function(k){var v=ec[k];var c=EPI_COLORS[k]||'#999';
-    h+='<div class="bar-row">'+badge(k,c)+'<div class="bar-track"><div class="bar-fill" style="width:'+(v/48*100)+'%;background:'+c+'"></div></div><span class="bar-count" style="color:'+c+'">'+v+'</span></div>';
-  });
-  h+='</div><div class="card"><div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:12px">Gap Classification</div>';
-  Object.keys(gc).forEach(function(k){var v=gc[k];var c=GAP_COLORS[k]||'#999';
-    h+='<div class="bar-row">'+badge(k,c)+'<div class="bar-track"><div class="bar-fill" style="width:'+(v/48*100)+'%;background:'+c+'"></div></div><span class="bar-count" style="color:'+c+'">'+v+'</span></div>';
-  });
-  h+='</div></div>';return h;
+async function loadData(){
+  try{
+    const resp=await fetch(JSON_URL);
+    if(!resp.ok) throw new Error('HTTP '+resp.status+': '+resp.statusText);
+    DATA=await resp.json();
+    buildDashboard();
+  }catch(err){
+    document.getElementById('loadingMsg').innerHTML=
+      '<div class="error-msg"><strong>Could not load dashboard_data.json</strong><br>'+
+      '<span style="font-size:0.85rem;color:var(--text2)">'+err.message+'<br><br>'+
+      'Run: <code>python3 Admissibility_Physics_Engine_V3_5.py --export-dashboard</code><br>'+
+      'to generate this file, then commit it to the repo.</span></div>';
+  }
 }
 
-function renderAccuracy(){
-  var ed=PREDICTIONS.filter(function(p){return p.err>0});
-  var mx=Math.max.apply(null,ed.map(function(d){return d.err}));
-  var h='<div class="card" style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:12px">Predictions vs Experiment</div><table><thead><tr><th>Prediction</th><th>FCF Value</th><th>Experiment</th><th>Error</th><th>Type</th></tr></thead><tbody>';
-  PREDICTIONS.forEach(function(p){
-    var ec=p.err===0?'#22c55e':p.err<1?'#3b82f6':'#f59e0b';
-    var tc=p.type==='exact'?'#22c55e':p.type==='range'?'#8b5cf6':'#3b82f6';
-    h+='<tr><td style="color:#f8fafc;font-weight:500">'+p.name+'</td><td style="color:#93c5fd;font-family:monospace">'+p.pred+'</td><td style="color:#94a3b8;font-family:monospace">'+p.obs+'</td><td>'+badge(p.err===0?'exact':p.err+'%',ec)+'</td><td>'+badge(p.type,tc)+'</td></tr>';
-  });
-  h+='</tbody></table></div>';
-  h+='<div class="card"><div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:12px">Error Distribution (continuous predictions)</div>';
-  var bw=Math.floor(600/ed.length)-12;
-  h+='<svg width="100%" viewBox="0 0 700 180" style="display:block;max-width:700px">';
-  ed.forEach(function(d,i){
-    var bh=mx>0?(d.err/mx)*120:0;
-    var x=50+i*(bw+12);var y=150-bh;
-    var c=d.err<1?'#3b82f6':d.err<5?'#f59e0b':'#ef4444';
-    h+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="4" fill="'+c+'"/>';
-    h+='<text x="'+(x+bw/2)+'" y="170" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="monospace">'+d.name+'</text>';
-    h+='<text x="'+(x+bw/2)+'" y="'+(y-5)+'" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="monospace">'+d.err+'%</text>';
-  });
-  h+='</svg></div>';return h;
+function epClass(ep){
+  if(ep==='P') return 'ep-P';
+  if(ep==='P_structural') return 'ep-Ps';
+  if(ep==='C_structural') return 'ep-Cs';
+  return 'ep-C';
+}
+function epTag(ep){
+  const cls=ep==='P'?'tag-P':ep==='P_structural'?'tag-Ps':ep==='C_structural'?'tag-Cs':'tag-C';
+  const label=ep==='P_structural'?'P_str':ep==='C_structural'?'C_str':ep;
+  return '<span class="tag '+cls+'">'+label+'</span>';
+}
+function gapTag(gap){
+  const cls=gap==='closed'?'tag-closed':gap==='import'?'tag-import':gap==='open_physics'?'tag-open':'tag-regime';
+  return '<span class="tag '+cls+'">'+gap+'</span>';
+}
+function psReasonTag(reason){
+  if(reason==='open_physics') return '<span class="tag tag-open">open physics</span>';
+  if(reason==='qft_import') return '<span class="tag tag-import">QFT import</span>';
+  if(reason==='regime_dependent') return '<span class="tag tag-regime">regime</span>';
+  return '<span class="tag tag-C">other</span>';
 }
 
-var currentTierFilter=null;
-function renderTheoremMap(){
-  var tiers=[0,1,2,3,4,5];
-  var filtered=currentTierFilter===null?THEOREMS:THEOREMS.filter(function(t){return t.tier===currentTierFilter});
-  var h='<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">';
-  h+='<button class="tier-filter'+(currentTierFilter===null?' active':'')+'" style="'+(currentTierFilter===null?'background:#3b82f6;color:#fff':'')+'" onclick="currentTierFilter=null;showTab(\'theorems\')">All ('+THEOREMS.length+')</button>';
-  tiers.forEach(function(t){
-    var cnt=THEOREMS.filter(function(th){return th.tier===t}).length;
-    var act=currentTierFilter===t;
-    h+='<button class="tier-filter'+(act?' active':'')+'" style="border-color:'+TIER_COLORS[t]+'44;'+(act?'background:'+TIER_COLORS[t]+';color:#fff':'color:'+TIER_COLORS[t])+'" onclick="currentTierFilter='+t+';showTab(\'theorems\')">T'+t+': '+TIER_NAMES[t]+' ('+cnt+')</button>';
+function buildDashboard(){
+  document.getElementById('loadingMsg').remove();
+  const ec=DATA.epistemic_counts;
+  const total=DATA.total_theorems;
+
+  document.getElementById('title').textContent='Admissibility Physics Engine v'+DATA.version;
+  document.getElementById('subtitle').textContent='Live dashboard \u00b7 Generated '+DATA.date+' \u00b7 '+total+' theorems';
+
+  const pPct=Math.round((ec.P||0)/total*100);
+  const openCount=Object.values(DATA.p_structural_reasons).filter(r=>r==='open_physics').length;
+  const auditFixed=DATA.audit_checks.filter(a=>a.status==='FIXED').length;
+
+  document.getElementById('heroRow').innerHTML=
+    '<div class="hero-card"><div class="label">Theorems</div><div class="value green">'+DATA.passed+'/'+total+'</div></div>'+
+    '<div class="hero-card"><div class="label">[P] Proven</div><div class="value accent">'+(ec.P||0)+' ('+pPct+'%)</div></div>'+
+    '<div class="hero-card"><div class="label">Open Physics</div><div class="value yellow">'+openCount+'</div></div>'+
+    '<div class="hero-card"><div class="label">Dep Cycles</div><div class="value '+(DATA.dependency_check.cycles===0?'green':'red')+'">'+DATA.dependency_check.cycles+'</div></div>'+
+    '<div class="hero-card"><div class="label">Audit Fixed</div><div class="value accent">'+auditFixed+'/'+DATA.audit_checks.length+'</div></div>';
+
+  var tabs=[
+    {id:'status',label:'Status'},{id:'epistemic',label:'Epistemic Map'},
+    {id:'accuracy',label:'Predictions'},{id:'theorems',label:'Theorems'},
+    {id:'imports',label:'Math Imports'},{id:'audit',label:'Audit'}
+  ];
+  var tabBar=document.getElementById('tabBar');
+  var content=document.getElementById('content');
+  tabs.forEach(function(t,i){
+    var div=document.createElement('div');
+    div.className='tab'+(i===0?' active':'');
+    div.textContent=t.label;
+    div.onclick=function(){
+      document.querySelectorAll('.tab').forEach(function(e){e.classList.remove('active')});
+      document.querySelectorAll('.panel').forEach(function(e){e.classList.remove('active')});
+      div.classList.add('active');
+      document.getElementById('panel-'+t.id).classList.add('active');
+    };
+    tabBar.appendChild(div);
   });
-  h+='</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">';
-  filtered.forEach(function(t){
-    h+='<div class="theorem-card" style="border-left:3px solid '+TIER_COLORS[t.tier]+'"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:monospace;font-size:12px;font-weight:700;color:#f8fafc">'+t.id+'</span><div style="display:flex;gap:4px">'+badge(t.epi,EPI_COLORS[t.epi]||'#999')+badge(t.gap,GAP_COLORS[t.gap]||'#999')+'</div></div><div style="font-size:11px;color:#94a3b8">'+t.name+'</div></div>';
+  tabs.forEach(function(t,i){
+    var panel=document.createElement('div');
+    panel.id='panel-'+t.id;
+    panel.className='panel'+(i===0?' active':'');
+    content.appendChild(panel);
   });
-  h+='</div>';return h;
+  buildStatusPanel();
+  buildEpistemicPanel();
+  buildAccuracyPanel();
+  buildTheoremsPanel();
+  buildImportsPanel();
+  buildAuditPanel();
 }
 
-function renderAudit(){
-  var fc=AUDIT_CHECKS.filter(function(a){return a.st==='FIXED'}).length;
-  var ac=AUDIT_CHECKS.filter(function(a){return a.st==='ACTIVE'}).length;
-  var h='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">';
-  h+='<div class="card" style="border:1px solid #22c55e33"><div class="card-label">v3.5 Fixes Applied</div><div class="card-value" style="color:#22c55e">'+fc+'</div><div class="card-sub">red-team issues resolved</div></div>';
-  h+='<div class="card" style="border:1px solid #3b82f633"><div class="card-label">Active Checks</div><div class="card-value" style="color:#3b82f6">'+ac+'</div><div class="card-sub">ongoing verification</div></div>';
-  h+='<div class="card" style="border:1px solid #f59e0b33"><div class="card-label">Schema Valid</div><div class="card-value" style="color:#f59e0b">48/48</div><div class="card-sub">all fields verified</div></div></div>';
-  h+='<div class="card" style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:12px">Red-Team Audit Checklist</div>';
-  AUDIT_CHECKS.forEach(function(a){
-    h+='<div class="audit-row" style="border-left:3px solid '+(SEV_COLORS[a.sev]||'#6b7280')+'"><span style="font-family:monospace;font-size:11px;color:#64748b;min-width:36px">'+a.id+'</span>'+badge(a.st,ST_COLORS[a.st]||'#6b7280')+'<span style="font-size:12px;color:#f8fafc;font-weight:500;min-width:160px">'+a.name+'</span><span style="font-size:11px;color:#94a3b8;flex:1;min-width:200px">'+a.desc+'</span>'+badge(a.sev,SEV_COLORS[a.sev]||'#6b7280')+'</div>';
+function buildStatusPanel(){
+  var el=document.getElementById('panel-status');
+  var ec=DATA.epistemic_counts, total=DATA.total_theorems;
+  var segments=[
+    {label:'P',count:ec.P||0,color:'var(--ep-P)'},
+    {label:'P_str',count:ec.P_structural||0,color:'var(--ep-Ps)'},
+    {label:'C_str',count:ec.C_structural||0,color:'var(--ep-Cs)'},
+    {label:'C',count:ec.C||0,color:'var(--ep-C)'}
+  ];
+  var h='<div class="section-title">Epistemic Distribution</div><div class="ep-bar-container"><div class="ep-bar">';
+  segments.forEach(function(s){
+    var pct=(s.count/total*100).toFixed(1);
+    if(s.count>0) h+='<div class="segment" style="width:'+pct+'%;background:'+s.color+'">'+s.count+'</div>';
+  });
+  h+='</div><div class="ep-legend">';
+  segments.forEach(function(s){
+    h+='<div class="ep-legend-item"><span class="dot" style="background:'+s.color+'"></span>['+s.label+'] '+s.count+' ('+(s.count/total*100).toFixed(0)+'%)</div>';
+  });
+  h+='</div></div>';
+
+  var psReasons=DATA.p_structural_reasons;
+  var rCounts={};
+  Object.values(psReasons).forEach(function(r){rCounts[r]=(rCounts[r]||0)+1});
+  var reasonColors={open_physics:'var(--ps-open)',qft_import:'var(--ps-qft)',regime_dependent:'var(--ps-regime)'};
+  var reasonLabels={open_physics:'Open Physics',qft_import:'QFT Import',regime_dependent:'Regime-Dependent'};
+  h+='<div class="section-title">P_structural Breakdown (Why Not [P]?)</div><div class="ps-reason-bar">';
+  Object.entries(rCounts).forEach(function(e){
+    var r=e[0],c=e[1];
+    h+='<div class="ps-reason-chip" style="background:'+reasonColors[r]+'22;color:'+reasonColors[r]+';border:1px solid '+reasonColors[r]+'44">'+reasonLabels[r]+': '+c+'</div>';
+  });
+  h+='</div><table><tr><th>Theorem</th><th>Reason</th><th>What\'s Needed</th></tr>';
+  Object.entries(psReasons).forEach(function(e){
+    var tid=e[0],reason=e[1];
+    var needs=reason==='open_physics'?'UV completion / Majorana-Dirac':reason==='qft_import'?'Physics \u03b2-coefficients (not pure math)':'Regime assumptions R12.1, R12.2';
+    h+='<tr><td class="mono">'+tid+'</td><td>'+psReasonTag(reason)+'</td><td style="color:var(--text2);font-size:0.82rem">'+needs+'</td></tr>';
+  });
+  h+='</table>';
+
+  h+='<div class="section-title">Tier Summary</div><table><tr><th>Tier</th><th>Name</th><th>Pass</th><th>Epistemic Mix</th></tr>';
+  Object.entries(DATA.tier_stats).sort(function(a,b){return +a[0]- +b[0]}).forEach(function(e){
+    var tier=e[0],info=e[1];
+    var tierThms=Object.entries(DATA.theorems).filter(function(x){return x[1].tier===+tier});
+    var epMix={};
+    tierThms.forEach(function(x){epMix[x[1].epistemic]=(epMix[x[1].epistemic]||0)+1});
+    var mixStr=Object.entries(epMix).map(function(x){return epTag(x[0])+' \u00d7'+x[1]}).join(' ');
+    h+='<tr><td class="mono">'+tier+'</td><td>'+info.name+'</td><td class="mono" style="color:var(--green)">'+info.passed+'/'+info.total+'</td><td>'+mixStr+'</td></tr>';
+  });
+  h+='</table>';
+
+  h+='<div class="section-title">Sector Verdicts</div><div style="display:flex;gap:0.75rem;flex-wrap:wrap">';
+  Object.entries(DATA.sector_verdicts).forEach(function(e){
+    var sec=e[0],ok=e[1];
+    var color=ok?'var(--green)':'var(--red)';
+    var icon=ok?'\u2713':'\u2717';
+    h+='<div class="hero-card" style="border-color:'+color+'40"><div class="label">'+sec+'</div><div class="value" style="color:'+color+'">'+icon+'</div></div>';
   });
   h+='</div>';
-  h+='<div class="card"><div style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:12px">v3.4 \u2192 v3.5 Changelog</div><div style="font-size:12px;color:#94a3b8;line-height:2">';
-  [["FIX","#ef4444","No runtime output","Engine now prints verification table on every run"],["FIX","#ef4444","Hardcoded passed:True","Schema validation + DAG cycle detection added"],["FIX","#ef4444","Gravity over-labeled","Import-gated results now C_structural (2 theorems)"],["FIX","#ef4444","Hidden Unicode","All bidi/zero-width chars removed, ASCII headers"],["FIX","#ef4444","R11 implicit","T11 now explicitly depends on R11 regime gate"],["FIX","#ef4444","T26\u2192T27d cycle","Circular dependency broken (T26 bounds independent)"],["NEW","#3b82f6","T12 + T12E inline","Dark sector integrated into master engine"],["NEW","#3b82f6","Computational witness","V(\u03A6) computed with 5 structural checks"],["NEW","#3b82f6","Flat structure","All files at root for GitHub drag-and-drop"]].forEach(function(r){
-    h+='<div>'+badge(r[0],r[1])+' <span style="color:#f8fafc">'+r[2]+'</span> \u2014 '+r[3]+'</div>';
-  });
-  h+='</div></div>';return h;
+  el.innerHTML=h;
 }
 
-var TABS=[{id:'status',label:'Status',render:renderStatus},{id:'accuracy',label:'Accuracy',render:renderAccuracy},{id:'theorems',label:'Theorem Map',render:renderTheoremMap},{id:'audit',label:'Audit Systems',render:renderAudit}];
-var activeTab='status';
-function showTab(id){
-  activeTab=id;
-  var bar=document.getElementById('tab-bar');
-  bar.innerHTML=TABS.map(function(t){return '<button class="tab-btn'+(t.id===activeTab?' active':'')+'" onclick="showTab(\''+t.id+'\')">'+t.label+'</button>';}).join('');
-  var content=document.getElementById('tab-content');
-  var tab=TABS.find(function(t){return t.id===id});
-  content.innerHTML=tab?tab.render():'';
+function buildEpistemicPanel(){
+  var el=document.getElementById('panel-epistemic');
+  var tierNames={};
+  Object.entries(DATA.tier_stats).forEach(function(e){tierNames[e[0]]=e[1].name});
+  var h='<div class="section-title">Tier \u00d7 Epistemic Grid</div><div class="tier-grid">';
+  for(var tier=0;tier<=5;tier++){
+    var thms=Object.entries(DATA.theorems).filter(function(x){return x[1].tier===tier}).sort(function(a,b){
+      var order={P:0,P_structural:1,C_structural:2,C:3};
+      return(order[a[1].epistemic]||9)-(order[b[1].epistemic]||9);
+    });
+    if(thms.length===0) continue;
+    h+='<div class="tier-row"><div class="tier-label">T'+tier+': '+(tierNames[tier]||'')+'</div><div class="tier-thms">';
+    thms.forEach(function(x){
+      var tid=x[0],t=x[1];
+      h+='<div class="tier-chip '+epClass(t.epistemic)+'" title="'+t.key_result.substring(0,60)+'">'+tid+'</div>';
+    });
+    h+='</div></div>';
+  }
+  h+='</div>';
+
+  h+='<div class="section-title">Gap Classification by Tier</div>';
+  h+='<table><tr><th>Tier</th><th style="color:var(--gap-closed)">Closed</th><th style="color:var(--gap-import)">Import</th><th style="color:var(--gap-open)">Open Physics</th></tr>';
+  for(var tier=0;tier<=5;tier++){
+    var thms=Object.entries(DATA.theorems).filter(function(x){return x[1].tier===tier});
+    if(thms.length===0) continue;
+    var gaps={closed:0,'import':0,open_physics:0};
+    thms.forEach(function(x){gaps[x[1].gap_type]=(gaps[x[1].gap_type]||0)+1});
+    h+='<tr><td class="mono">T'+tier+': '+(tierNames[tier]||'')+'</td>';
+    h+='<td class="mono" style="color:var(--gap-closed)">'+(gaps.closed||'\u2014')+'</td>';
+    h+='<td class="mono" style="color:var(--gap-import)">'+(gaps['import']||'\u2014')+'</td>';
+    h+='<td class="mono" style="color:var(--gap-open)">'+(gaps.open_physics||'\u2014')+'</td></tr>';
+  }
+  h+='</table>';
+
+  // Stacked bar SVG
+  var W=600,H=200,padL=120,padR=20,padT=20,padB=30;
+  var chartW=W-padL-padR, chartH=H-padT-padB;
+  var colors={P:'#4ade80',P_structural:'#fbbf24',C_structural:'#fb923c',C:'#8a90a0'};
+  h+='<div class="section-title">Epistemic Composition by Tier</div>';
+  h+='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px">';
+  for(var tier=0;tier<=5;tier++){
+    var thms=Object.entries(DATA.theorems).filter(function(x){return x[1].tier===tier});
+    if(thms.length===0) continue;
+    var y=padT+tier*(chartH/6)+(chartH/6-20)/2;
+    var epC={};
+    thms.forEach(function(x){epC[x[1].epistemic]=(epC[x[1].epistemic]||0)+1});
+    h+='<text x="'+(padL-8)+'" y="'+(y+14)+'" text-anchor="end" fill="#8a90a0" font-size="10">T'+tier+'</text>';
+    var xOff=padL;
+    ['P','P_structural','C_structural','C'].forEach(function(ep){
+      var count=epC[ep]||0;
+      if(count===0) return;
+      var w=count/DATA.total_theorems*chartW*2.5;
+      h+='<rect x="'+xOff+'" y="'+y+'" width="'+w+'" height="20" rx="2" fill="'+colors[ep]+'" opacity="0.85"/>';
+      if(w>16) h+='<text x="'+(xOff+w/2)+'" y="'+(y+14)+'" text-anchor="middle" fill="#000" font-size="10" font-weight="600">'+count+'</text>';
+      xOff+=w;
+    });
+  }
+  h+='</svg>';
+  el.innerHTML=h;
 }
-showTab('status');
+
+function buildAccuracyPanel(){
+  var el=document.getElementById('panel-accuracy');
+  var h='<div class="section-title">Predictions vs Experiment</div>';
+  h+='<table><tr><th>Quantity</th><th>Predicted</th><th>Observed</th><th>Error</th><th>Source</th><th>Status</th></tr>';
+  DATA.predictions.forEach(function(p){
+    var errColor=p.error_pct===0?'var(--green)':p.error_pct<1?'var(--yellow)':'var(--orange)';
+    var statusColor=p.status==='exact'?'var(--green)':p.status==='derived'?'var(--accent)':'var(--yellow)';
+    h+='<tr><td style="font-weight:600">'+p.quantity+'</td><td class="mono">'+p.predicted+'</td>';
+    h+='<td class="mono" style="color:var(--text2)">'+p.observed+'</td>';
+    h+='<td class="mono" style="color:'+errColor+'">'+(p.error_pct===0?'exact':p.error_pct.toFixed(2)+'%')+'</td>';
+    h+='<td class="mono">'+p.theorem+'</td><td style="color:'+statusColor+'">'+p.status+'</td></tr>';
+  });
+  h+='</table>';
+
+  // Error bar chart
+  var preds=DATA.predictions.filter(function(p){return p.error_pct>0}).sort(function(a,b){return a.error_pct-b.error_pct});
+  if(preds.length>0){
+    h+='<div class="section-title">Error Distribution</div>';
+    var W=500,H=40+preds.length*32,padL=140,padR=60;
+    var maxErr=Math.max.apply(null,preds.map(function(p){return p.error_pct}));
+    h+='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:'+W+'px">';
+    preds.forEach(function(p,i){
+      var y=15+i*32;
+      var w=(p.error_pct/maxErr)*(W-padL-padR);
+      var color=p.error_pct<1?'#fbbf24':'#fb923c';
+      h+='<text x="'+(padL-8)+'" y="'+(y+14)+'" text-anchor="end" fill="#8a90a0" font-size="10">'+p.quantity+'</text>';
+      h+='<rect x="'+padL+'" y="'+y+'" width="'+w+'" height="20" rx="2" fill="'+color+'" opacity="0.8"/>';
+      h+='<text x="'+(padL+w+6)+'" y="'+(y+14)+'" fill="'+color+'" font-size="10" font-weight="600">'+p.error_pct.toFixed(2)+'%</text>';
+    });
+    h+='</svg>';
+  }
+  el.innerHTML=h;
+}
+
+function buildTheoremsPanel(){
+  var el=document.getElementById('panel-theorems');
+  var h='<div class="section-title">All Theorems</div>';
+  h+='<div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap">';
+  h+='<div class="tier-chip ep-P clickable" onclick="filterThms(\'all\')">All</div>';
+  for(var t=0;t<=5;t++){
+    h+='<div class="tier-chip ep-Ps clickable" onclick="filterThms('+t+')">T'+t+'</div>';
+  }
+  h+='<div class="tier-chip ep-Cs clickable" onclick="filterThms(\'ps\')">P_structural</div>';
+  h+='</div><div id="thmGrid" class="card-grid"></div>';
+  el.innerHTML=h;
+  filterThms('all');
+}
+
+function filterThms(filter){
+  var grid=document.getElementById('thmGrid');
+  var thms=Object.entries(DATA.theorems);
+  if(filter==='ps') thms=thms.filter(function(x){return x[1].epistemic==='P_structural'});
+  else if(filter!=='all') thms=thms.filter(function(x){return x[1].tier===filter});
+  thms.sort(function(a,b){return a[1].tier-b[1].tier});
+  grid.innerHTML=thms.map(function(x){
+    var tid=x[0],t=x[1];
+    var imports=t.imported_theorems?t.imported_theorems.map(function(i){return '<span class="tag tag-import">'+i.substring(0,35)+'</span>'}).join(' '):'';
+    var psR=t.ps_reason?psReasonTag(t.ps_reason):'';
+    return '<div class="thm-card '+epClass(t.epistemic)+'">'+
+      '<div class="tid">'+tid+' <span style="font-weight:400;font-size:0.72rem;color:var(--text2)">T'+t.tier+'</span></div>'+
+      '<div class="kr">'+t.key_result.substring(0,90)+'</div>'+
+      '<div class="meta">'+epTag(t.epistemic)+' '+gapTag(t.gap_type)+' '+psR+'</div>'+
+      (imports?'<div style="margin-top:0.3rem">'+imports+'</div>':'')+
+      '</div>';
+  }).join('');
+}
+
+function buildImportsPanel(){
+  var el=document.getElementById('panel-imports');
+  var imports=DATA.math_imports;
+  var count=Object.keys(imports).length;
+  var h='<div class="section-title">'+count+' Mathematical Theorems Imported</div>';
+  h+='<p style="color:var(--text2);margin-bottom:1rem;font-size:0.88rem">Each is a proven result from the mathematical literature. The framework derives physical consequences; the math is not conjectural.</p>';
+  Object.entries(imports).sort(function(a,b){return b[1].used_by.length-a[1].used_by.length}).forEach(function(e){
+    var name=e[0],info=e[1];
+    var detail=typeof info.details==='string'?info.details:JSON.stringify(info.details);
+    h+='<div class="import-item"><div class="name">'+name+'</div>';
+    h+='<div class="detail">'+detail+'</div>';
+    h+='<div class="used-by">Used by: '+info.used_by.join(', ')+'</div></div>';
+  });
+  el.innerHTML=h;
+}
+
+function buildAuditPanel(){
+  var el=document.getElementById('panel-audit');
+  var checks=DATA.audit_checks;
+  var fixed=checks.filter(function(a){return a.status==='FIXED'}).length;
+  var active=checks.filter(function(a){return a.status==='ACTIVE'}).length;
+  var h='<div class="section-title">Audit Checks ('+fixed+' fixed, '+active+' active)</div>';
+  h+='<table><tr><th>ID</th><th>Check</th><th>Status</th><th>Severity</th></tr>';
+  checks.forEach(function(a){
+    var sColor=a.status==='FIXED'?'var(--green)':'var(--yellow)';
+    var vColor=a.severity==='critical'?'var(--red)':a.severity==='high'?'var(--orange)':a.severity==='medium'?'var(--yellow)':'var(--text2)';
+    h+='<tr><td class="mono">'+a.id+'</td><td>'+a.check+'</td>';
+    h+='<td class="mono" style="color:'+sColor+'">'+a.status+'</td>';
+    h+='<td class="mono" style="color:'+vColor+'">'+a.severity+'</td></tr>';
+  });
+  h+='</table>';
+  h+='<div class="section-title">Dependency Validation</div>';
+  var dc=DATA.dependency_check;
+  h+='<div style="display:flex;gap:1rem">';
+  h+='<div class="hero-card"><div class="label">DAG Valid</div><div class="value '+(dc.valid?'green':'red')+'">'+(dc.valid?'\u2713':'\u2717')+'</div></div>';
+  h+='<div class="hero-card"><div class="label">Cycles</div><div class="value '+(dc.cycles===0?'green':'red')+'">'+dc.cycles+'</div></div>';
+  h+='</div>';
+  if(dc.issues&&dc.issues.length>0){
+    h+='<div style="margin-top:0.5rem;color:var(--red);font-size:0.85rem">';
+    dc.issues.forEach(function(i){h+='<div>\u26a0 '+i+'</div>'});
+    h+='</div>';
+  }
+  el.innerHTML=h;
+}
+
+window.filterThms=filterThms;
+loadData();
 </script>
 </body>
 </html>

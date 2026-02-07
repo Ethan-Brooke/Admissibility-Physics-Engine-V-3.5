@@ -731,6 +731,75 @@ def display_audit_gaps(master: Dict[str, Any]):
 # ===========================================================================
 
 def export_json(master: Dict[str, Any]) -> str:
+    """Export full dashboard-ready JSON with all visualization data."""
+
+    # --- Predictions table ---
+    predictions = [
+        {'quantity': 'sin²θ_W', 'predicted': '3/13 ≈ 0.23077', 'observed': '0.23122 ± 0.00003',
+         'error_pct': 0.19, 'theorem': 'T24', 'status': 'derived'},
+        {'quantity': 'Gauge group', 'predicted': 'SU(3)×SU(2)×U(1)', 'observed': 'SU(3)×SU(2)×U(1)',
+         'error_pct': 0.0, 'theorem': 'T_gauge', 'status': 'exact'},
+        {'quantity': 'Generations', 'predicted': '3', 'observed': '3',
+         'error_pct': 0.0, 'theorem': 'T7', 'status': 'exact'},
+        {'quantity': 'Spacetime dim', 'predicted': '4', 'observed': '4',
+         'error_pct': 0.0, 'theorem': 'T8', 'status': 'exact'},
+        {'quantity': 'Higgs exists', 'predicted': 'Yes (massive scalar)', 'observed': 'Yes (125 GeV)',
+         'error_pct': 0.0, 'theorem': 'T_Higgs', 'status': 'exact'},
+        {'quantity': 'DM exists', 'predicted': 'Yes (geometric)', 'observed': 'Yes (Ω_DM ≈ 0.26)',
+         'error_pct': 0.0, 'theorem': 'T12', 'status': 'structural'},
+        {'quantity': 'Λ > 0', 'predicted': 'Yes (residual capacity)', 'observed': 'Yes (Λ ≈ 10⁻¹²²)',
+         'error_pct': 0.0, 'theorem': 'T11', 'status': 'structural'},
+        {'quantity': 'f_b (baryon fraction)', 'predicted': '0.200', 'observed': '0.157',
+         'error_pct': 27.4, 'theorem': 'T12E', 'status': 'structural'},
+    ]
+
+    # --- Audit checks ---
+    audit_checks = [
+        {'id': 'A01', 'check': 'Circular imports in theorem chain', 'status': 'FIXED', 'severity': 'critical'},
+        {'id': 'A02', 'check': 'T26→T27d circular dependency', 'status': 'FIXED', 'severity': 'critical'},
+        {'id': 'A03', 'check': 'Stale P_structural labels (v3.6 upgrade)', 'status': 'FIXED', 'severity': 'high'},
+        {'id': 'A04', 'check': 'L_ε disambiguation', 'status': 'FIXED', 'severity': 'high'},
+        {'id': 'A05', 'check': 'T_sin2theta derivation chain', 'status': 'FIXED', 'severity': 'high'},
+        {'id': 'A06', 'check': 'Import-gated C_structural labels', 'status': 'FIXED', 'severity': 'medium'},
+        {'id': 'A07', 'check': 'Computational witnesses (V(Φ))', 'status': 'ACTIVE', 'severity': 'low'},
+        {'id': 'A08', 'check': 'Anomaly scan exhaustiveness', 'status': 'ACTIVE', 'severity': 'low'},
+        {'id': 'A09', 'check': 'Exit codes for CI', 'status': 'ACTIVE', 'severity': 'low'},
+        {'id': 'A10', 'check': 'JSON export completeness', 'status': 'FIXED', 'severity': 'medium'},
+        {'id': 'A11', 'check': 'Standalone module imports', 'status': 'ACTIVE', 'severity': 'low'},
+        {'id': 'A12', 'check': 'Unicode gap classifier aliases', 'status': 'FIXED', 'severity': 'medium'},
+    ]
+
+    # --- Math imports catalog ---
+    all_imports = {}
+    for tid, r in master['all_results'].items():
+        imp = r.get('imported_theorems', {})
+        if imp:
+            for thm_name, details in imp.items():
+                if thm_name not in all_imports:
+                    all_imports[thm_name] = {
+                        'used_by': [],
+                        'details': details if isinstance(details, str) else
+                                   details.get('statement', str(details)),
+                    }
+                all_imports[thm_name]['used_by'].append(tid)
+
+    # --- P_structural reason codes ---
+    ps_reasons = {}
+    open_phys = {'T4G', 'T4G_Q31', 'T10', 'T11'}
+    qft_import = {'T6', 'T6B'}
+    regime_dep = {'T12', 'T12E'}
+    for tid, r in master['all_results'].items():
+        if r['epistemic'] == 'P_structural':
+            if tid in open_phys:
+                ps_reasons[tid] = 'open_physics'
+            elif tid in qft_import:
+                ps_reasons[tid] = 'qft_import'
+            elif tid in regime_dep:
+                ps_reasons[tid] = 'regime_dependent'
+            else:
+                ps_reasons[tid] = 'other'
+
+    # --- Build report ---
     report = {
         'version': master['version'],
         'date': master['date'],
@@ -748,6 +817,10 @@ def export_json(master: Dict[str, Any]) -> str:
             str(k): {'name': v['name'], 'passed': v['passed'], 'total': v['total']}
             for k, v in master['tier_stats'].items()
         },
+        'predictions': predictions,
+        'audit_checks': audit_checks,
+        'math_imports': all_imports,
+        'p_structural_reasons': ps_reasons,
         'theorems': {},
     }
     for tid, r in master['all_results'].items():
@@ -758,7 +831,12 @@ def export_json(master: Dict[str, Any]) -> str:
             'epistemic': r['epistemic'],
             'key_result': r.get('key_result', ''),
             'gap_type': _classify_gap(tid),
+            'dependencies': r.get('dependencies', []),
         }
+        if r.get('imported_theorems'):
+            entry['imported_theorems'] = list(r['imported_theorems'].keys())
+        if tid in ps_reasons:
+            entry['ps_reason'] = ps_reasons[tid]
         report['theorems'][tid] = entry
     return json.dumps(report, indent=2)
 
@@ -772,6 +850,11 @@ if __name__ == '__main__':
 
     if '--json' in sys.argv:
         print(export_json(master))
+    elif '--export-dashboard' in sys.argv:
+        out_path = 'dashboard_data.json'
+        with open(out_path, 'w') as f:
+            f.write(export_json(master))
+        print(f"Dashboard data exported to {out_path}")
     elif '--audit-gaps' in sys.argv:
         display_audit_gaps(master)
     else:
